@@ -1,0 +1,29 @@
+# --- Build Directories ---
+build/
+bin/
+out/
+
+# --- IDE Folders ---
+.vscode/
+.vs/
+*.user
+*.suo
+*.sln
+*.vcxproj*
+
+# --- Compiled Files ---
+*.exe
+*.dll
+*.lib
+*.pdb
+*.obj
+*.o
+
+# --- OS Specific ---
+Thumbs.db
+.DS_Store
+
+# --- CMake specifics ---
+CMakeCache.txt
+CMakeFiles/
+CMakeSettings.json
