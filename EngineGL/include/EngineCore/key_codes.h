@@ -1,0 +1,2 @@
+#define ENGINE_KEY_ESCAPE 256
+#define ENGINE_KEY_SPACE  32
