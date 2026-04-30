@@ -24,8 +24,9 @@ set(ENGINE_SOURCES
     "external/glad/src/glad.c"
 )
 
-# --- 3. Build as a DLL ---
-add_library(EngineCore SHARED ${ENGINE_SOURCES})
+# # --- 3. Build as a DLL ---
+# add_library(EngineCore SHARED ${ENGINE_SOURCES})
+add_library(EngineCore STATIC ${ENGINE_SOURCES})
 
 # --- 4. Include Paths ---
 target_include_directories(EngineCore PUBLIC 

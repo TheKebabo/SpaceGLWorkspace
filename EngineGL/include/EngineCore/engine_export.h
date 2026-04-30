@@ -8,13 +8,17 @@
  * BUILDING_MY_ENGINE is NOT defined, so it "Imports" them instead.
  */
 
-#ifdef _WIN32
-    #ifdef BUILDING_MY_ENGINE
-        #define ENGINE_API __declspec(dllexport)
-    #else
-        #define ENGINE_API __declspec(dllimport)
-    #endif
-#else
-    // For Linux/Mac, symbols are exported by default, so we define it as nothing.
-    #define ENGINE_API
-#endif
+ 
+#define ENGINE_API
+
+// DLL logic
+// #ifdef _WIN32
+//     #ifdef BUILDING_MY_ENGINE
+//         #define ENGINE_API __declspec(dllexport)
+//     #else
+//         #define ENGINE_API __declspec(dllimport)
+//     #endif
+// #else
+//     // For Linux/Mac, symbols are exported by default, so we define it as nothing.
+//     #define ENGINE_API
+// #endif
