@@ -10,6 +10,14 @@ namespace SpaceGL
         float x = 0.0f, y = 0.0f, z = 0.0f;  // Position
         float radius = 0.0f;   // Radius
     };
+    // struct OrbitData {
+    //     // alignas(16) glm::vec3 normal;  For SSBO
+    //     glm::vec3 normal;
+    //     // alignas(16) glm::vec3 periapsisDir;
+    //     glm::vec3 periapsisDir;
+    //     float a; // Semi-major axis
+    //     float e; // Eccentricity
+    // };
 
     // Will handle sending data to and from GPU
     class BuffersHandler

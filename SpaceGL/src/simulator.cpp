@@ -7,21 +7,23 @@
 #include "buffers_handler.hpp"
 #include "renderer.hpp"
 
-
 namespace SpaceGL
 {
+    float G = 15.0f;
+
     Simulator::Simulator(int winWidth, int winHeight, double mouseDX, double mouseDY, int nBodies)
     {
         // for (int i = 0; i < nBodies; ++i)
         // {
         //     bodies.push_back(Body(glm::vec3(0.0f), glm::vec3(0.0), 5.0, 50.0));
         // };
-        bodies.push_back(Body(glm::vec3(0.0f, -5.0f, 0.0f), glm::vec3(5.0), 10.0, 355.0));
-        bodies.push_back(Body(glm::vec3(0.0f, -25.0f, 0.0f), glm::vec3(4.33, 0.0, 0.0), 2.0, 2.0));
-        bodies.push_back(Body(glm::vec3(0.0f, 25.0f, 0.0f), glm::vec3(-3.44f, 0.0f, 0.0f), 2.0, 2.0));
+        bodies.push_back(Body(glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 5000.0f));
+        bodies.push_back(Body(glm::vec3(-80.0f, 0.0f, 0.0f), glm::vec3(0.0f, 22.0f, 0.0f), 3.0f, 100.0f));
+        bodies.push_back(Body(glm::vec3(-160.0f, 0.0f, 0.0f), glm::vec3(0.0f, 23.5f, 0.0), 3.0f, 50.0f));
+        bodies.push_back(Body(glm::vec3(-250.0f, 0.0f, 0.0f), glm::vec3(0.0f, 25.0f, 0.0), 3.0f, 100.0f));
 
         m_buffersHandler.emplace(bodies);
-        m_camera.emplace(0.0f, 0.0f, 70.0f);
+        m_camera.emplace(0.0f, 0.0f, 500.0f);
         m_renderer.emplace(winWidth, winHeight, *m_camera, mouseDX, mouseDY);
     }
 
@@ -33,70 +35,75 @@ namespace SpaceGL
 
     void Simulator::update(double mouseDX, double mouseDY, float dt)
     {
-        float G = 1.0f;
-
         // Reset accs
         for (Body& a : bodies) a.setAcc(glm::vec3(0.0f));
-        
+         
+        int strongestBodyForEach[bodies.size()]; // For each body, there will be one other with strongest pull
+        float strongestForceForEach[bodies.size()];
+        for (size_t i = 0; i < bodies.size(); ++i) strongestForceForEach[i] = 0.0;
+
         // Calc new accs
+
         for (size_t i = 0; i < bodies.size(); ++i)
         {
             for (size_t j = i+1; j < bodies.size(); ++j)
             {
-                Body& a = bodies[i];
-                Body& b = bodies[j];
+                Body& A = bodies[i];
+                Body& B = bodies[j];
+
+                glm::vec3 r = B.pos() - A.pos();
 
                 // Calc. new acceleration a = (G * M / r^2) * (r / |r|) = (G * M / |r|^3) * r
-                glm::vec3 r = b.pos() - a.pos();
-
-                float softening = 0.01; // Stop force exploding with small r
+                float softening = 0.01f; // Stop force exploding with small r
                 float dist = glm::length(r) + softening;
                 
                 if (dist < 0.01f) continue; // Safety check
                 
                 float commonAccVal = G / (dist*dist*dist);
-                a.updateAcc(commonAccVal * (float)b.mass() * r);
-                b.updateAcc(commonAccVal * (float)a.mass() * -r);
-                // std::cout << b.acc().x << ", " << b.acc().y << ", " << b.acc().z << std::endl;
+                glm::vec3 forceA = commonAccVal * (float)B.mass() * r;
+                glm::vec3 forceB = commonAccVal * (float)A.mass() * -r;
+
+                A.updateAcc(forceA);
+                B.updateAcc(forceB);
+
+                float forceAVal = glm::length2(forceA);
+                if (forceAVal > strongestForceForEach[i])
+                {
+                    // std::cout << A.mass() << ": " << B.mass() << std::endl;
+                    strongestBodyForEach[i] = j;
+                    strongestForceForEach[i] = forceAVal;
+                }
+
+                float forceBVal = glm::length2(forceB);
+                if (forceBVal > strongestForceForEach[j])
+                {
+                    // std::cout << A.mass() << ": " << B.mass() << std::endl;
+                    strongestBodyForEach[j] = i;
+                    strongestForceForEach[j] = forceBVal;
+                }
             }
         }
         
         std::vector<BodyData> newBodiesData;
         std::vector<glm::mat4> newOrbitsData;
 
-        // Calc new vels and poses
-        for (Body& body : bodies)
+        // Calc new vels and poses, and new orbit data
+        for (size_t i = 0; i < bodies.size(); ++i)
         {
+            Body& body = bodies[i];
+
+            // UPDATE VEL AND POS
             glm::vec3 dVel = dt * body.acc();
             body.updateVel(dVel);
             glm::vec3 dPos = dt * body.vel();
             body.updatePos(dPos);
             newBodiesData.push_back(BodyData{body.pos().x, body.pos().y, body.pos().z, (float)body.radius()});
+    
+            // CALCULATE ORBIT SHAPE
+            Body& central = bodies[strongestBodyForEach[i]];
 
             // ADD ORBIT DATA
-            glm::vec3 orbitDir = glm::normalize(body.acc());
-
-            glm::mat4 instanceModel = glm::mat4(1.0f);
-            
-            // |a| = v^2/r so r = v^2/|a|
-            float orbitR = glm::dot(body.vel(), body.vel()) / glm::length(body.acc());
-            glm::vec3 orbitCentre = body.pos() + orbitR * orbitDir;
-
-            // Translate by orbit centre
-            instanceModel = glm::translate(instanceModel, orbitCentre);
-
-            // Rotate model UP vector so it is pointing in orbit direction
-            glm::vec3 axis = glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), orbitDir);
-            if (glm::length(axis) > 0.001f) // Check if dir is (nearly) straight up or down
-            {
-                float angle = std::acos(glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), orbitDir));
-                instanceModel = glm::rotate(instanceModel, angle, axis);
-            }
-
-            // Scale by radius of orbit - from radius to 1 to radius orbitR
-            instanceModel = glm::scale(instanceModel, glm::vec3(orbitR, orbitR, 1.0f));
-
-            newOrbitsData.push_back(instanceModel);
+            m_calcOrbit(body, central, newOrbitsData);
         }
         
         m_renderer->updateCamPosUniform(*m_camera, mouseDX, mouseDY);
@@ -104,5 +111,61 @@ namespace SpaceGL
         m_buffersHandler->updateOrbitsPosBuffer(newOrbitsData);
         m_renderer->renderBodies(m_buffersHandler->bodiesVAO(), bodies.size());
         m_renderer->renderOrbits(m_buffersHandler->orbitsVAO(), bodies.size());
+    }
+
+    void Simulator::m_calcOrbit(Body& body, Body& central, std::vector<glm::mat4>& newOrbitsData)
+    {
+        // GET REQUIRED DATA
+        glm::vec3 v = body.vel() - central.vel();
+        glm::vec3 r = body.pos() - central.pos();
+        double M = central.mass();
+        float mew = G * M;
+
+        // Calculate orbital energy (KE - PE)
+        double E = 0.5 * glm::length2(v) - (mew) / (glm::length(r) + 0.001);
+        
+        // Find eccentricity
+        glm::vec3 eVec = (1.0f / (float)mew) *
+            ((glm::length2(v) - mew/glm::length(r)) * r - glm::dot(r, v) * v);
+        float e2 = glm::length2(eVec);
+
+        glm::vec3 periapsisDir;
+        if (e2 < 0.000001f)
+        {
+            // If it's a circle, any direction works as the "periapsis"
+            periapsisDir = glm::vec3(1.0f, 0.0f, 0.0f); 
+        } else {
+            periapsisDir = (1.0f / (float)sqrt(e2)) * eVec;
+        }
+
+        float a = -(G * M) / (2 * E); // Semi-major axis
+        float b = a * sqrt(1.0f - e2); // Semi-minor axis
+
+        // Normal of orbit is angular momentum
+        glm::vec3 h = glm::cross(r, v);
+        glm::vec3 normal = glm::normalize(h); // Get 'Z-axis' of orbit
+
+        glm::vec3 Q = glm::cross(normal, periapsisDir); // Get 'Y-axis' of orbit
+
+        // CONSTRUCT MODEL MATRIX
+        glm::mat4 orbitModel(1.0f);
+
+        // Translate to central body position
+        orbitModel = glm::translate(orbitModel, central.pos());
+
+        glm::mat4 rotation(1.0f);
+        rotation[0] = glm::vec4(periapsisDir, 0.0f);
+        rotation[1] = glm::vec4(Q, 0.0f);
+        rotation[2] = glm::vec4(normal, 0.0f);
+
+        orbitModel = orbitModel * rotation;
+
+        // Offset so central body is at focus point
+        float focalOffset = a*sqrt(e2);
+        orbitModel = glm::translate(orbitModel, glm::vec3(-focalOffset, 0.0f, 0.0f));
+
+        orbitModel = glm::scale(orbitModel, glm::vec3(a, b, 1.0f)); // This is done 1st
+
+        newOrbitsData.push_back(orbitModel);
     }
 }

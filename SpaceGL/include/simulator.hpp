@@ -26,5 +26,7 @@ namespace SpaceGL
         std::optional<BuffersHandler> m_buffersHandler;
         std::optional<Renderer> m_renderer;
         std::optional<Camera> m_camera;
+
+        void m_calcOrbit(Body& body, Body& central, std::vector<glm::mat4>& newOrbitsData);
     };
 }

@@ -7,14 +7,16 @@ uniform mat4 view;
 uniform mat4 proj;
 
 out vec2 relPos; // For frag discarding
-out vec3 worldPos;
-out float worldRadius;
+out vec3 viewPos;
+out vec2 worldScale;
 
 void main()
 {
     relPos = aVertex;
-    // Radius is the length of the first column of the model matrix
-    worldRadius = max(0.01, length(vec3(instanceMatrix[0][0], instanceMatrix[0][1], instanceMatrix[0][2])));
-    worldPos = (view * instanceMatrix * vec4(aVertex, 0.0f, 1.0)).xyz;
+
+    worldScale.x = max(0.01, length(instanceMatrix[0]));
+    worldScale.y = max(0.01, length(instanceMatrix[1]));
+
+    viewPos = (view * instanceMatrix * vec4(aVertex, 0.0f, 1.0)).xyz;
     gl_Position = proj * view * instanceMatrix * vec4(aVertex, 0.0f, 1.0);
 }

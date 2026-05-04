@@ -32,7 +32,7 @@ namespace SpaceGL
 
         // Bodies
         float fov = glm::radians(45.0f);
-        float near = 1.0f; float far = 500.0f;
+        float near = 1.0f; float far = 10000.0f;
         glm::mat4 proj = glm::perspective(fov, (float)m_widthPX / (float)m_heightPX, near, far);
         m_bodiesShader->use();
         m_bodiesShader->setMat4_w_Name("proj", false, &proj[0][0]);
