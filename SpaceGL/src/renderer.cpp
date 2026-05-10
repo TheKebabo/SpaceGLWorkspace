@@ -14,7 +14,7 @@ namespace SpaceGL
         glViewport(0, 0, m_widthPX, m_heightPX);
         setUniforms(cam, mouseDX, mouseDY);
         
-        // glDisable(GL_CULL_FACE);
+        glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glEnable(GL_FRAMEBUFFER_SRGB);
@@ -81,6 +81,7 @@ namespace SpaceGL
         }
 
         m_bodiesShader->use();
+        
         glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, bodiesCount);
@@ -102,10 +103,14 @@ namespace SpaceGL
             throw std::runtime_error("Bodies shader was not initialised");
         }
 
+        glDisable(GL_CULL_FACE);
+        
         m_orbitsShader->use();
         glBindVertexArray(VAO);
         glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, orbitsCount);
         glBindVertexArray(0);
+        
+        glEnable(GL_CULL_FACE);
     }
 
     void Renderer::renderSkybox(GLuint VAO, GLuint texture)
