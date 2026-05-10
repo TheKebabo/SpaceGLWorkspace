@@ -9,7 +9,8 @@ out vec4 fragCol;
 uniform mat4 view;
 uniform mat4 proj;
 uniform vec3 camPos;
-uniform vec3 bodyCol; // Diffuse
+
+uniform sampler2D tex;
 
 void main()
 {
@@ -32,14 +33,20 @@ void main()
 
         vec3 localHit = localCamPos + t*rayDir;
         vec4 clipHit = proj * view * vec4((localHit * radius) + worldCentre, 1.0);
-        gl_FragDepth =  clipHit.z / clipHit.w; // Manually do perspective division
+        vec4 ndcHit = clipHit / clipHit.w; // Manually do perspective division
+        gl_FragDepth =  ndcHit.z; 
 
         // LIGHTING
         // Diffuse
         vec3 pointLight = vec3(50.0, 10.0, 0.0); // hardcode for now
         vec3 L = normalize(pointLight - localHit);
         vec3 N = normalize(localHit);
-        vec3 diffuse = bodyCol * max(0.0, dot(L, N));
+
+        // Get texture coord
+        float longd = 0.5 + (atan(localHit.x, localHit.z)/(2*3.14159265));
+        float lat = 0.5 - (asin(localHit.y)/3.14159265);
+        vec2 texCoord = vec2(longd, lat);
+        vec3 diffuse = texture(tex, texCoord).xyz * max(0.0, dot(L, N));
 
         // Specular
         vec3 V = normalize(localCamPos - localHit);

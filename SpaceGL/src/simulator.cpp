@@ -13,17 +13,12 @@ namespace SpaceGL
 
     Simulator::Simulator(int winWidth, int winHeight, double mouseDX, double mouseDY, int nBodies)
     {
-        // for (int i = 0; i < nBodies; ++i)
-        // {
-        //     bodies.push_back(Body(glm::vec3(0.0f), glm::vec3(0.0), 5.0, 50.0));
-        // };
         bodies.push_back(Body(glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 5000.0f));
         bodies.push_back(Body(glm::vec3(-80.0f, 0.0f, 0.0f), glm::vec3(0.0f, 22.0f, 0.0f), 3.0f, 100.0f));
-        bodies.push_back(Body(glm::vec3(-160.0f, 0.0f, 0.0f), glm::vec3(0.0f, 23.5f, 0.0), 3.0f, 50.0f));
-        bodies.push_back(Body(glm::vec3(-250.0f, 0.0f, 0.0f), glm::vec3(0.0f, 25.0f, 0.0), 3.0f, 100.0f));
+        // bodies.push_back(Body(glm::vec3(-160.0f, 0.0f, 0.0f), glm::vec3(0.0f, 23.5f, 0.0), 3.0f, 50.0f));
 
         m_buffersHandler.emplace(bodies);
-        m_camera.emplace(0.0f, 0.0f, 500.0f);
+        m_camera.emplace(0.0f, 0.0f, 100.0f);
         m_renderer.emplace(winWidth, winHeight, *m_camera, mouseDX, mouseDY);
     }
 
@@ -40,7 +35,11 @@ namespace SpaceGL
          
         int strongestBodyForEach[bodies.size()]; // For each body, there will be one other with strongest pull
         float strongestForceForEach[bodies.size()];
-        for (size_t i = 0; i < bodies.size(); ++i) strongestForceForEach[i] = 0.0;
+        for (size_t i = 0; i < bodies.size(); ++i)
+        {
+            strongestBodyForEach[i] = i;
+            strongestForceForEach[i] = 0.0;
+        }
 
         // Calc new accs
 
@@ -109,8 +108,9 @@ namespace SpaceGL
         m_renderer->updateCamPosUniform(*m_camera, mouseDX, mouseDY);
         m_buffersHandler->updateBodiesPosBuffer(newBodiesData);
         m_buffersHandler->updateOrbitsPosBuffer(newOrbitsData);
-        m_renderer->renderBodies(m_buffersHandler->bodiesVAO(), bodies.size());
-        m_renderer->renderOrbits(m_buffersHandler->orbitsVAO(), bodies.size());
+        m_renderer->renderScene(m_buffersHandler->bodiesVAO(), bodies.size(), m_buffersHandler->bodiesTexture(), 
+                                m_buffersHandler->orbitsVAO(),
+                                m_buffersHandler->skyboxVAO(), m_buffersHandler->skyboxTexture());
     }
 
     void Simulator::m_calcOrbit(Body& body, Body& central, std::vector<glm::mat4>& newOrbitsData)

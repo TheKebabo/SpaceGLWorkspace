@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <glad.h>
 #include <GLFW/glfw3.h>
 #include "buffers_handler.hpp"
@@ -7,8 +8,12 @@ namespace SpaceGL
 {
     BuffersHandler::BuffersHandler(std::vector<Body>& bodies)
     {
+        m_resourceHandler = ResourceHandler();
+
+        initSkybox();
         initBodiesBuffers(bodies);
         initOrbitsBuffers(bodies);
+        initBodyTextures();
     }
 
     void BuffersHandler::initBodiesBuffers(std::vector<Body>& bodies)
@@ -37,8 +42,9 @@ namespace SpaceGL
         };
         
         // Create VBO and send vertex data
-        glGenBuffers(1, &m_bodiesBoundariesVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_bodiesBoundariesVBO);
+        GLuint bodiesBoundariesVBO;
+        glGenBuffers(1, &bodiesBoundariesVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, bodiesBoundariesVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 24, bodiesBoundingVertices, GL_STATIC_DRAW);
 
         // Create VAO
@@ -48,8 +54,9 @@ namespace SpaceGL
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);   // Describes to OpenGL how to interpet vertex POSITION data
 
         // Create EBO and send index data
-        glGenBuffers(1, &m_bodiesBoundariesEBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_bodiesBoundariesEBO);
+        GLuint bodiesBoundariesEBO;
+        glGenBuffers(1, &bodiesBoundariesEBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bodiesBoundariesEBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 36, bodiesBoundingIndices, GL_STATIC_DRAW);
 
         // BODIES INSTANCE VERTEX DATA
@@ -95,14 +102,15 @@ namespace SpaceGL
 
         // Create VAO, VBO, EBO
         glGenVertexArrays(1, &m_orbitsVAO);
-        glGenBuffers(1, &m_orbitsBoundariesVBO);
-        glGenBuffers(1, &m_orbitsBoundariesEBO);
+        GLuint orbitsBoundariesVBO, orbitsBoundariesEBO;
+        glGenBuffers(1, &orbitsBoundariesVBO);
+        glGenBuffers(1, &orbitsBoundariesEBO);
 
         // Bind VAO
         glBindVertexArray(m_orbitsVAO); // Binds 'VAO' as current active vertex array object
 
         // Send vertex data to VBO
-        glBindBuffer(GL_ARRAY_BUFFER, m_orbitsBoundariesVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, orbitsBoundariesVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(orbitsBoundingVertices), orbitsBoundingVertices, GL_STATIC_DRAW);
 
         // Setup VAO attributes
@@ -110,7 +118,7 @@ namespace SpaceGL
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);   // Describes to OpenGL how to interpet vertex POSITION data
 
         // Send index data to EBO
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_orbitsBoundariesEBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, orbitsBoundariesEBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(orbitsBoundingIndices), orbitsBoundingIndices, GL_STATIC_DRAW);
 
         // ORBITS INSTANCE VERTEX DATA
@@ -151,5 +159,117 @@ namespace SpaceGL
         glBindBuffer(GL_ARRAY_BUFFER, m_orbitsDataVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * newOrbitsData.size(), newOrbitsData.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    void BuffersHandler::initBodyTextures()
+    {
+        glGenTextures(1, &m_bodyTexture);
+        glBindTexture(GL_TEXTURE_2D, m_bodyTexture);
+        // set the texture wrapping/filtering options (on the currently bound texture object)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        ResourceHandler::Image image = m_resourceHandler.loadImage(ASSETS_PATH "2k_earth_daymap.jpg");
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width, image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        m_resourceHandler.freeImage(image); 
+    }
+
+    void BuffersHandler::initSkybox()
+    {
+        // VAO + VBO
+        float skyboxVertices[] = {
+            // positions          
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+        };
+
+        glGenVertexArrays(1, &m_skyboxVAO);
+        GLuint skyboxVBO;
+        glGenBuffers(1, &skyboxVBO);
+
+        // Bind VAO
+        glBindVertexArray(m_skyboxVAO);
+
+        // Send vertex data to VBO
+        glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+
+        // Setup VAO attributes
+        glEnableVertexAttribArray(0);   /// Enables vertex attribute at location = 0, since they are disabled by default
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);   // Describes to OpenGL how to interpet vertex POSITION data
+        
+        glBindVertexArray(0);
+
+        // TEXTURE
+        glGenTextures(1, &m_skyboxTexture);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, m_skyboxTexture);
+
+        std::vector<std::string> faces {
+            "right.png",
+            "left.png",
+            "top.png",
+            "bottom.png",
+            "front.png",
+            "back.png"
+        };
+        for (unsigned int i = 0; i < faces.size(); i++)
+        {
+            ResourceHandler::Image image = m_resourceHandler.loadImage((std::string(ASSETS_PATH) + faces[i]).c_str());
+
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
+                         0, image.nChannels == 4 ? GL_RGBA : GL_RGB, image.width, image.height, 0, image.nChannels == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, image.data
+            );
+            m_resourceHandler.freeImage(image);
+        }
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     }
 }

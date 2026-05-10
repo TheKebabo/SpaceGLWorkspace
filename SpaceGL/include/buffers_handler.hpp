@@ -3,6 +3,7 @@
 #include <vector>
 #include <glad.h>
 #include "body.hpp"
+#include "resource_handler.hpp"
 
 namespace SpaceGL
 {
@@ -29,19 +30,25 @@ namespace SpaceGL
         void updateBodiesPosBuffer(std::vector<BodyData>& newBodiesData);
         void initOrbitsBuffers(std::vector<Body>& bodies);
         void updateOrbitsPosBuffer(std::vector<glm::mat4>& newOrbitsData);
+        void initBodyTextures();
+        void initSkybox();
         GLuint bodiesVAO() { return m_bodiesVAO; }
+        GLuint bodiesTexture() { return m_bodyTexture; }
         GLuint orbitsVAO() { return m_orbitsVAO; }
-        GLuint bodiesBoundariesVBO() { return m_bodiesBoundariesVBO; }
+        GLuint skyboxVAO() { return m_skyboxVAO; }
+        GLuint skyboxTexture() { return m_skyboxTexture; }
 
     private:
         GLuint m_bodiesVAO;
-        GLuint m_bodiesBoundariesVBO;
-        GLuint m_bodiesBoundariesEBO;
-        GLuint m_bodiesDataVBO;
-
         GLuint m_orbitsVAO;
-        GLuint m_orbitsBoundariesEBO;
-        GLuint m_orbitsBoundariesVBO;
+        GLuint m_skyboxVAO;
+        
+        GLuint m_bodiesDataVBO;
         GLuint m_orbitsDataVBO;
+        
+        GLuint m_bodyTexture;
+        GLuint m_skyboxTexture;
+
+        ResourceHandler m_resourceHandler;
     };
 }

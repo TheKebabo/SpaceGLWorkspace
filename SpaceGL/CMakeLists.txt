@@ -13,12 +13,16 @@ set(SPACEGL_SOURCES
     "src/buffers_handler.cpp"
     "src/renderer.cpp"
     "src/camera.cpp"
+    "src/resource_handler.cpp"
 )
 
 add_executable(SpaceGL ${SPACEGL_SOURCES})
 
 target_compile_definitions(SpaceGL PRIVATE 
     SHADER_PATH="${CMAKE_CURRENT_SOURCE_DIR}/shaders/"
+)
+target_compile_definitions(SpaceGL PRIVATE 
+    ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
 )
 
 # Point to the headers
