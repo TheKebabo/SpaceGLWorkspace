@@ -6,12 +6,15 @@
 
 namespace SpaceGL
 {
-    BuffersHandler::BuffersHandler(std::vector<Body>& bodies)
+    BuffersHandler::BuffersHandler(std::vector<Body>& bodies, std::vector<std::string> texPaths, std::vector<std::string> specularTexPaths,
+                                   size_t texWidth, size_t texHeight)
     {
         m_resourceHandler = ResourceHandler();
 
         initSkybox();
         initBodiesBuffers(bodies);
+        m_bodiesTexArr =  genTextureArray(texPaths, texWidth, texHeight);
+        m_bodiesSpecularTexArr = genTextureArray(specularTexPaths, texWidth, texHeight);
         initOrbitsBuffers(bodies);
     }
 
@@ -62,7 +65,7 @@ namespace SpaceGL
         std::vector<BodyData> bodiesData;
         for (Body& body : bodies)
         {
-            bodiesData.push_back(BodyData{body.pos(), (float)body.radius(), (float)body.texIndex()});
+            bodiesData.push_back(BodyData{body.pos(), (float)body.radius(), body.texIndices()});
         }
 
         // Create VBO and send vertex data
@@ -70,11 +73,19 @@ namespace SpaceGL
         updateBodiesPosBuffer(bodiesData);
 
         glBindVertexArray(m_bodiesVAO); // Binds 'VAO' as current active vertex array object
-        glEnableVertexAttribArray(1);   /// Enables vertex attribute at location = 1, since they are disabled by default
         glBindBuffer(GL_ARRAY_BUFFER, m_bodiesDataVBO);
+        
+        // 2nd attribute (1st instanced): position and radius
+        // --------------------------------------------------
+        glEnableVertexAttribArray(1);   /// Enables vertex attribute at location = 1, since they are disabled by default
         glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(BodyData), (void*)0);   // Describes to OpenGL how to interpet vertex POSITION data
         //Tell OpenGL this data is per-instance, not per-vertex
         glVertexAttribDivisor(1, 1);
+        
+        // 3r attribute (2nd instanced): texIndices
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BodyData), (void*)(4*sizeof(float)));
+        glVertexAttribDivisor(2, 1);
 
         // Unbind VBO, VAO
         glBindVertexArray(0);
@@ -189,12 +200,12 @@ namespace SpaceGL
         glBindTexture(GL_TEXTURE_2D_ARRAY, texArr);
 
         // Allocate storage for all layers at once
-        GLuint mipmapLevels = log2(std::max(width, height) + 1);
-        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, 512, 512, paths.size());
+        GLuint mipmapLevels = (GLuint)floor(log2(std::max(width, height))) + 1;
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipmapLevels, GL_RGBA8, width, height, paths.size());
 
         for (int i = 0; i < paths.size(); i++) {
             ResourceHandler::Image image = m_resourceHandler.loadImage(paths[i].c_str());
-
+            if (image.width < 0 || image.height < 0) std::cerr << "Image didn't load correctly: " << paths[i] << std::endl;
             if (image.width != width || image.height != height) std::cerr << "Supplied image dims are not consistent." << std::endl;
 
             // Arguments: target, mip_level, x, y, layer_index, w, h, depth(1), format, type, data
@@ -202,6 +213,10 @@ namespace SpaceGL
 
             m_resourceHandler.freeImage(image);
         }
+
+        glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // Mag doesn't use mipmaps
 
         return texArr;
     }

@@ -8,7 +8,7 @@ namespace SpaceGL
     struct BodyData {
         glm::vec3 pos;
         float radius = 0.0f;
-        float texIndex = -1.0f;
+        glm::vec2 texIndices = glm::vec2(-1.0f, -1.0f);
     };
 
     // Planetary body class
@@ -22,8 +22,7 @@ namespace SpaceGL
             m_vel = initVec;
             m_radius = rad;
             m_mass = mass;
-            m_tex = t_tex;
-            m_specularTex = t_specular;
+            m_texIndices = glm::vec2(t_texIndex, t_specularIndex);
         }
         glm::vec3 pos() { return m_pos; }
         void setPos(glm::vec3 p) { m_pos = p; }
@@ -35,8 +34,7 @@ namespace SpaceGL
         void updateAcc(glm::vec3 a) { m_acc += a; }
         double radius() { return m_radius; }
         double mass() { return m_mass; }
-        GLuint texIndex() { return m_texIndex; }
-        GLuint specularTexIndex() { return m_specularTexIndex; }
+        glm::vec2 texIndices() { return m_texIndices; }
 
     protected:
         glm::vec3 m_pos{0.0f, 0.0f, 0.0f};
@@ -46,7 +44,6 @@ namespace SpaceGL
         double m_radius = 1.0;
         double m_mass = 1.0;
         
-        size_t m_texIndex;
-        size_t m_specularTexIndex;
+        glm::vec2 m_texIndices;
     };
 }

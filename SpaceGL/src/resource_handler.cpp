@@ -8,12 +8,12 @@ namespace SpaceGL
     ResourceHandler::Image ResourceHandler::loadImage(const char* path)
     {
         int width, height, nrChannels;
-        std::cout << path << std::endl; 
-        unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
+        unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 4);
 
         if (data) return Image {width, height, nrChannels, data};
 
         std::cerr << "Image data not loaded." << std::endl;
+        return Image{-1, -1, -1};
     }
 
     void ResourceHandler::freeImage(ResourceHandler::Image image)

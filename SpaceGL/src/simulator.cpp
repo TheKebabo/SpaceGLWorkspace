@@ -13,14 +13,21 @@ namespace SpaceGL
 
     Simulator::Simulator(int winWidth, int winHeight, double mouseDX, double mouseDY, int nBodies)
     {
-        GLuint earthTex = m_buffersHandler->genTexture("SpaceGL\assets\2k_earth_daymap.jpg");
-        GLuint earthSpecular = m_buffersHandler->genTexture("SpaceGL\assets\2k_earth_specular_map.png");
+        std::string assetsPath = std::string(ASSETS_PATH);
+        std::vector<std::string> texPaths = {
+            assetsPath + "2k_earth_daymap.jpg",
+            assetsPath + "2k_jupiter.jpg"
+        };
+        std::vector<std::string> specularTexPaths = {
+            assetsPath + "2k_earth_specular_map.png",
+            assetsPath + "2k_lower_specular_map.png"
+        };
 
-        bodies.push_back(Body(glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 5000.0f, earthTex, earthSpecular));
-        bodies.push_back(Body(glm::vec3(-80.0f, 0.0f, 0.0f), glm::vec3(0.0f, 22.0f, 0.0f), 3.0f, 100.0f, earthTex, earthSpecular));
-        bodies.push_back(Body(glm::vec3(-160.0f, 0.0f, 0.0f), glm::vec3(0.0f, 23.5f, 0.0), 3.0f, 50.0f, earthTex, earthSpecular));
+        bodies.push_back(Body(glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 5000.0f, 1, 1));
+        bodies.push_back(Body(glm::vec3(-80.0f, 0.0f, 0.0f), glm::vec3(0.0f, 22.0f, 0.0f), 3.0f, 100.0f, 0, 0));
+        bodies.push_back(Body(glm::vec3(-160.0f, 0.0f, 0.0f), glm::vec3(0.0f, 23.5f, 0.0), 3.0f, 50.0f, 0, 0));
 
-        m_buffersHandler.emplace(bodies);
+        m_buffersHandler.emplace(bodies, texPaths, specularTexPaths, 2048, 1024);
         m_camera.emplace(0.0f, 0.0f, 100.0f);
         m_renderer.emplace(winWidth, winHeight, *m_camera, mouseDX, mouseDY);
     }
@@ -99,7 +106,7 @@ namespace SpaceGL
             body.updateVel(dVel);
             glm::vec3 dPos = dt * body.vel();
             body.updatePos(dPos);
-            newBodiesData.push_back(BodyData{body.pos(), (float)body.radius()});
+            newBodiesData.push_back(BodyData{body.pos(), (float)body.radius(), body.texIndices()});
     
             // CALCULATE ORBIT SHAPE
             Body& central = bodies[strongestBodyForEach[i]];
@@ -111,7 +118,8 @@ namespace SpaceGL
         m_renderer->updateCamPosUniform(*m_camera, mouseDX, mouseDY);
         m_buffersHandler->updateBodiesPosBuffer(newBodiesData);
         m_buffersHandler->updateOrbitsPosBuffer(newOrbitsData);
-        m_renderer->renderScene(m_buffersHandler->bodiesVAO(), bodies.size(),
+        m_renderer->renderScene(m_buffersHandler->bodiesVAO(), m_buffersHandler->bodiesTexArray(), m_buffersHandler->bodiesSpecularTexArray(),
+                                bodies.size(),
                                 m_buffersHandler->orbitsVAO(),
                                 m_buffersHandler->skyboxVAO(), m_buffersHandler->skyboxTexture());
     }

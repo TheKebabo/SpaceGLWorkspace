@@ -40,6 +40,8 @@ namespace SpaceGL
         // Bodies
         m_bodiesShader->use();
         m_bodiesShader->setMat4_w_Name("proj", false, &proj[0][0]);
+        m_bodiesShader->setInt_w_Name("texArray", 0);
+        m_bodiesShader->setInt_w_Name("specularTexArray", 1);
         
         // Orbits
         m_orbitsShader->use();
@@ -73,7 +75,7 @@ namespace SpaceGL
         m_orbitsShader->setMat4_w_Name("view", false, &view[0][0]);
     }
 
-    void Renderer::renderBodies(GLuint VAO, GLsizei bodiesCount)
+    void Renderer::renderBodies(GLuint VAO, GLuint texArray, GLuint specularTexArray, GLsizei bodiesCount)
     {
         if (!m_bodiesShader.has_value())
         {
@@ -83,19 +85,20 @@ namespace SpaceGL
         m_bodiesShader->use();
             
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texArray);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specular);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, specularTexArray);
 
         glBindVertexArray(VAO);
         glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, bodiesCount);
         glBindVertexArray(0);
     }
 
-    void Renderer::renderScene(GLuint bodiesVAO, size_t bodiesSize, GLuint orbitsVAO, GLuint skyboxVAO, GLuint skyboxTexture)
+    void Renderer::renderScene(GLuint bodiesVAO, GLuint texArray, GLuint specularTexArray,
+                               size_t bodiesSize, GLuint orbitsVAO, GLuint skyboxVAO, GLuint skyboxTexture)
     {                   
         renderSkybox(skyboxVAO, skyboxTexture);
-        renderBodies(bodiesVAO, bodiesSize);
+        renderBodies(bodiesVAO, texArray, specularTexArray, bodiesSize);
         renderOrbits(orbitsVAO, bodiesSize);
     }
 
