@@ -13,7 +13,6 @@ namespace SpaceGL
         initSkybox();
         initBodiesBuffers(bodies);
         initOrbitsBuffers(bodies);
-        initBodyTextures();
     }
 
     void BuffersHandler::initBodiesBuffers(std::vector<Body>& bodies)
@@ -63,7 +62,7 @@ namespace SpaceGL
         std::vector<BodyData> bodiesData;
         for (Body& body : bodies)
         {
-            bodiesData.push_back(BodyData{body.pos().x, body.pos().y, body.pos().z, (float)body.radius()});
+            bodiesData.push_back(BodyData{body.pos(), (float)body.radius(), (float)body.texIndex()});
         }
 
         // Create VBO and send vertex data
@@ -161,22 +160,50 @@ namespace SpaceGL
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    void BuffersHandler::initBodyTextures()
+    GLuint BuffersHandler::genTexture(std::string path)
     {
-        glGenTextures(1, &m_bodyTexture);
-        glBindTexture(GL_TEXTURE_2D, m_bodyTexture);
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
         // set the texture wrapping/filtering options (on the currently bound texture object)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        ResourceHandler::Image image = m_resourceHandler.loadImage(ASSETS_PATH "2k_earth_daymap.jpg");
+        ResourceHandler::Image image = m_resourceHandler.loadImage((ASSETS_PATH + path).c_str());
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width, image.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image.data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        m_resourceHandler.freeImage(image); 
+        m_resourceHandler.freeImage(image);
+
+        return tex;
+    }
+
+    // Images must all have the same resolution
+    GLuint BuffersHandler::genTextureArray(std::vector<std::string> paths, size_t width, size_t height)
+    {
+        GLuint texArr;
+        glGenTextures(1, &texArr);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texArr);
+
+        // Allocate storage for all layers at once
+        GLuint mipmapLevels = log2(std::max(width, height) + 1);
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, 512, 512, paths.size());
+
+        for (int i = 0; i < paths.size(); i++) {
+            ResourceHandler::Image image = m_resourceHandler.loadImage(paths[i].c_str());
+
+            if (image.width != width || image.height != height) std::cerr << "Supplied image dims are not consistent." << std::endl;
+
+            // Arguments: target, mip_level, x, y, layer_index, w, h, depth(1), format, type, data
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE, image.data);
+
+            m_resourceHandler.freeImage(image);
+        }
+
+        return texArr;
     }
 
     void BuffersHandler::initSkybox()

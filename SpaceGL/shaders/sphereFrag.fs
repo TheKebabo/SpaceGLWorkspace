@@ -11,6 +11,7 @@ uniform mat4 proj;
 uniform vec3 camPos;
 
 uniform sampler2D tex;
+// uniform smapler2D specular;
 
 void main()
 {
@@ -51,7 +52,8 @@ void main()
         // Specular
         vec3 V = normalize(localCamPos - localHit);
         vec3 R = normalize((-L) - 2*(dot(-L, N)) * N);
-        vec3 specCol = vec3(1.0, 1.0, 1.0);
+        // vec3 specCol = texture(specular, texCoord).xyz;
+        vec3 specCol = vec3(1.0);
         vec3 specular = specCol * max(0.0, pow(dot(R, V), 12));
 
         // Tone map

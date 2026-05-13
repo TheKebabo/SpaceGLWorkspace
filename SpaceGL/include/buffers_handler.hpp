@@ -7,10 +7,6 @@
 
 namespace SpaceGL
 {
-    struct BodyData {
-        float x = 0.0f, y = 0.0f, z = 0.0f;  // Position
-        float radius = 0.0f;   // Radius
-    };
     // struct OrbitData {
     //     // alignas(16) glm::vec3 normal;  For SSBO
     //     glm::vec3 normal;
@@ -30,10 +26,10 @@ namespace SpaceGL
         void updateBodiesPosBuffer(std::vector<BodyData>& newBodiesData);
         void initOrbitsBuffers(std::vector<Body>& bodies);
         void updateOrbitsPosBuffer(std::vector<glm::mat4>& newOrbitsData);
-        void initBodyTextures();
+        GLuint genTexture(std::string path);
+        GLuint genTextureArray(std::vector<std::string> paths, size_t width, size_t height);
         void initSkybox();
         GLuint bodiesVAO() { return m_bodiesVAO; }
-        GLuint bodiesTexture() { return m_bodyTexture; }
         GLuint orbitsVAO() { return m_orbitsVAO; }
         GLuint skyboxVAO() { return m_skyboxVAO; }
         GLuint skyboxTexture() { return m_skyboxTexture; }
@@ -46,7 +42,6 @@ namespace SpaceGL
         GLuint m_bodiesDataVBO;
         GLuint m_orbitsDataVBO;
         
-        GLuint m_bodyTexture;
         GLuint m_skyboxTexture;
 
         ResourceHandler m_resourceHandler;
